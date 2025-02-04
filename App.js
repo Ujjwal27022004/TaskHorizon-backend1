@@ -17,7 +17,7 @@ const globaltoken = process.env.GLOBALTOKEN;
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'admin',
+    password: 'mysql#amar#2003',
     database: 'to_do_app'
 });
 
@@ -433,6 +433,14 @@ app.post('/create-jira-issue', async (req, res) => {
     const msg= `New Jira Issue has been created successfully\n\n Description : ${description} \n\n Issue Type : ${issueType}`
     sendMessageToChannel(obj.teamId, obj.channelId, msg)
 
+    const issueData={
+        id:issue.key,
+        description,
+        issueType
+    }
+    console.log("printing issue data for adaptive cards",issueData)
+    sendAdaptiveCardToTeams(issueData)
+
 });
 
 
@@ -469,6 +477,261 @@ app.get('/get-jira-issues', async (req, res) => {
     }
 });
 
+app.get('/get-jira-issues', async (req, res) => {
+    try {
+        const response = await axios.get(
+            "https://ujjwal27022004.atlassian.net/rest/api/2/search?jql=project=WTS%20ORDER%20BY%20Created",
+            {
+                auth: { username: JIRA_EMAIL, password: JIRA_API_TOKEN },
+                headers: { 'Content-Type': 'application/json' }
+            }
+        );    
+
+        console.log('Response Data:', response.data); // Log full response
+
+        if (response.data.issues && response.data.issues.length > 0) {
+            // Extract only required fields
+            const issues = response.data.issues.map(issue => ({
+                id: issue.id,
+                key: issue.key,
+                summary: issue.fields.summary, // Issue summary
+                description: issue.fields.description || "No description provided", // Issue description
+                issueType: issue.fields.issuetype.name // Issue type name
+            }));
+
+            res.json(issues); // Return filtered issues
+        } else {
+            res.status(404).json({ message: "No issues found." });
+        }
+
+    } catch (error) {
+        console.error('Error fetching Jira issues:', error.response ? error.response.data : error.message);
+        res.status(500).send('Error fetching Jira issues');
+    }
+});
+
+
+
+
+
+app.put('/update-jira-description', async (req, res) => {
+    const { issueKey, description } = req.body;
+
+    if (!issueKey || !description) {
+        return res.status(400).json({ message: "issueKey and description are required" });
+    }
+
+    try {
+        const response = await axios.put(
+            `https://ujjwal27022004.atlassian.net/rest/api/2/issue/${issueKey}`,
+            {
+                fields: {
+                    description: description, // directly updating description
+                    // Optionally, you can update more fields like summary, etc.
+                }
+            },
+            {
+                headers: {
+                    'Authorization': `Basic ${Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64')}`, // Basic Auth with encoded email and API token
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+
+        res.status(200).json({ message: "JIRA issue description updated successfully", issue: response.data });
+    } catch (error) {
+        console.error('Error updating Jira issue:', error.response ? error.response.data : error.message);
+        res.status(500).json({ message: "Error updating Jira issue", error: error.response?.data });
+    }
+});
+
+
+const TEAMS_WEBHOOK_URL = "https://connecticustech.webhook.office.com/webhookb2/cba0dd4e-956d-476a-b8f9-9658f8bee60c@606c61c3-92be-49d5-8cc7-2521512edb61/IncomingWebhook/86a851e37c514995ad94a5b7e930c69d/1360bc79-a0e2-4b70-89af-dc1b035a3034/V2LahgI-_ST83ilZDGVp7W_aLcYv7p1bFcFbNLvCJTOaA1"
+const sendAdaptiveCardToTeams = async (issueData,statusMessage="") => {
+    const adaptiveCard = {
+        type: "message",
+        attachments: [
+            {
+                contentType: "application/vnd.microsoft.card.adaptive",
+                content: {
+                    type: "AdaptiveCard",
+                    version: "1.4",
+                    body: [
+                        {
+                            type: "TextBlock",
+                            size: "Medium",
+                            weight: "Bolder",
+                            text: issueData.issueType
+                        },
+                        {
+                            type: "TextBlock",
+                            text: issueData.description,
+                            wrap: true
+                        },
+                        {
+                            type: "TextBlock",
+                            text: `Issue ID: ${issueData.id}`,
+                            weight: "Lighter",
+                            wrap: true
+                        },
+                        ...(statusMessage
+                            ? [
+                                {
+                                    type: "TextBlock",
+                                    text: statusMessage,
+                                    color: "Good",
+                                    weight: "Bolder",
+                                    wrap: true
+                                }
+                            ]
+                            : [])
+                    ],
+                    actions: [
+                        {
+                            type: "Action.ShowCard",
+                            title: "Update Issue",
+                            card: {
+                                type: "AdaptiveCard",
+                                body: [
+                                    {
+                                        type: "Input.ChoiceSet",
+                                        id: "updatedIssueType",
+                                        label: "Select Issue Type",
+                                        style: "compact",
+                                        choices: [
+                                            { title: "Bug", value: "Bug" },
+                                            { title: "Story", value: "Story" },
+                                            { title: "Task", value: "Task" }
+                                        ],
+                                        value: issueData.issueType // Default to current issue type
+                                    },
+                                    {
+                                        type: "Input.Text",
+                                        id: "updatedDescription",
+                                        label: "Update Description",
+                                        isMultiline: true,
+                                        placeholder: "Enter new issue description...",
+                                        value: issueData.description // Default to current description
+                                    }
+                                ],
+                                actions: [
+                                    {
+                                        type: "Action.Execute",
+                                        title: "Submit",
+                                        data: {
+                                            action:"updateIssue",
+                                            issueKey:issueData.id
+                                        }
+                                    }
+                                ]
+                            }
+                        },
+                        {
+                            type: "Action.OpenUrl",
+                            title: "View Details",
+                            url: `https://your-frontend.com/issues/${issueData.id}`
+                        }
+                    ]
+                }
+            }
+        ]
+    };
+    
+    
+  
+    try {
+        console.log("try blok executing")
+      const response = await axios.post(TEAMS_WEBHOOK_URL, adaptiveCard, {
+        headers: { 
+            Authorization : `Bearer ${globaltoken}`,
+            "Content-Type": "application/json"
+         },
+      });
+      console.log("working after the try block")
+      console.log("Adaptive Card sent successfully:", response.data);
+    } catch (error) {
+      console.error("Error sending Adaptive Card to Teams:", error);
+    }
+  };
+  
+
+  app.post("/issues", async (req, res) => {
+    const { title, description } = req.body;
+  
+    // Simulate saving to a database and generating an issue ID
+    const newIssue = {
+      id: `ISSUE-${Date.now()}`,
+      title,
+      description,
+    };
+  
+    console.log("New issue created:", newIssue);
+  
+    // Send Adaptive Card notification
+    await sendAdaptiveCardToTeams(newIssue);
+  
+    res.status(201).json({ message: "Issue created and Teams notification sent!", issue: newIssue });
+  });
+
+// const updateIssue=async(updateIssueObject)=>{
+//     console.log("update issue function has been called");
+//     try {
+//         console.log("tyry block of update issue function has been called");
+//         const response = await axios.put(
+//             `https://ujjwal27022004.atlassian.net/rest/api/2/issue/${updateIssueObject.issueKey}`,
+//             {
+//                 fields: {
+//                     description: updateIssueObject.description, // directly updating description
+//                     issueType:updateIssueObject.issueType
+//                 }
+//             },
+//             {
+//                 headers: {
+//                     'Authorization': `Basic ${Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64')}`, // Basic Auth with encoded email and API token
+//                     'Content-Type': 'application/json',
+//                 }
+//             }
+//         );
+
+//         res.status(200).json({ message: "JIRA issue description updated successfully", issue: response.data });
+//     } catch (error) {
+//         console.error('Error updating Jira issue:', error.response ? error.response.data : error.message);
+//         res.status(500).json({ message: "Error updating Jira issue", error: error.response?.data });
+//     }
+       
+    
+//         res.status(400).json({ error: "Invalid action" });
+    
+// }
+
+app.post("/updateIssue", async (req, res) => {
+    const { action, issueKey, updatedIssueType, updatedDescription } = req.body;
+
+    if (action === "updateIssue") {
+        console.log(`Updating issue ${issueKey}`);
+        console.log(`New Type: ${updatedIssueType}`);
+        console.log(`New Description: ${updatedDescription}`);
+
+        // Simulate database update
+        const updatedIssue = {
+            key: issueKey,
+            issueType: updatedIssueType || "Bug",
+            description: updatedDescription || "No description provided."
+        };
+
+        // Status message to confirm the update
+        const statusMessage = `✅ Issue updated successfully! New Type: ${updatedIssue.issueType}`;
+
+        // Send an updated Adaptive Card with new details
+        await sendAdaptiveCardToTeams(updatedIssue, statusMessage);
+
+        return res.json({ message: `Issue ${issueKey} updated successfully.` });
+    }
+
+    res.status(400).json({ error: "Invalid action type" });
+});
+
   
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
