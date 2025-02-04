@@ -469,6 +469,41 @@ app.get('/get-jira-issues', async (req, res) => {
     }
 });
 
+
+
+
+
+app.put('/update-jira-description', async (req, res) => {
+    const { issueKey, description } = req.body;
+
+    if (!issueKey || !description) {
+        return res.status(400).json({ message: "issueKey and description are required" });
+    }
+
+    try {
+        const response = await axios.put(
+            `https://ujjwal27022004.atlassian.net/rest/api/2/issue/${issueKey}`,
+            {
+                fields: {
+                    description: description, // directly updating description
+                    // Optionally, you can update more fields like summary, etc.
+                }
+            },
+            {
+                headers: {
+                    'Authorization': `Basic ${Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64')}`, // Basic Auth with encoded email and API token
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
+
+        res.status(200).json({ message: "JIRA issue description updated successfully", issue: response.data });
+    } catch (error) {
+        console.error('Error updating Jira issue:', error.response ? error.response.data : error.message);
+        res.status(500).json({ message: "Error updating Jira issue", error: error.response?.data });
+    }
+});
+
   
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
