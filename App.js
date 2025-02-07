@@ -7,7 +7,6 @@ const qs = require('qs');
 const routes = require('./routes');
 const dotenv = require('dotenv')
 
-
 const https = require("https");
 const fs = require("fs");
 
@@ -446,7 +445,7 @@ app.post('/create-jira-issue', async (req, res) => {
     sendMessageToChannel(obj.teamId, obj.channelId, msg)
 
     const issueData={
-        id:issue.key,
+        id:issue.id,
         description,
         issueType
     }
@@ -527,6 +526,196 @@ app.put('/update-jira-description', async (req, res) => {
 
 
 
+
+
+
+
+
+
+
+
+
+// async function sendAdaptiveCardToTeams(issueData) {
+//     const MS_TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL;
+
+//     const adaptiveCard = {
+//         type: "message",
+//         attachments: [
+//             {
+//                 contentType: "application/vnd.microsoft.card.adaptive",
+//                 content: {
+//                     $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+//                     type: "AdaptiveCard",
+//                     version: "1.4",
+//                     body: [
+//                         {
+//                             type: "TextBlock",
+//                             text: "🚀 **New JIRA Issue Created**",
+//                             weight: "bolder",
+//                             size: "medium"
+//                         },
+//                         {
+//                             type: "FactSet",
+//                             facts: [
+//                                 { title: "Issue Key:", value: issueData.id },
+//                                 { title: "Summary:", value: issueData.description },
+//                                 { title: "Type:", value: issueData.issueType }
+//                             ]
+//                         }
+//                     ],
+//                     actions: [
+//                         {
+//                             type: "Action.OpenUrl",
+//                             title: "🔍 View Details",
+//                             url: `https://ujjwal27022004.atlassian.net/browse/${issueData.id}`
+//                         },
+//                         {
+//                             type: "Action.Submit",
+//                             title: "✏️ Update Issue",
+//                             data: {
+//                                 action: "update_issue",
+//                                 issueKey: issueData.id
+//                             }
+//                         }
+//                     ]
+//                 }
+//             }
+//         ]
+//     };
+
+//     try {
+//         const response = await axios.post(MS_TEAMS_WEBHOOK_URL, adaptiveCard);
+//         console.log("Adaptive Card Sent:", response.data);
+//     } catch (error) {
+//         console.error("Error sending Adaptive Card:", error.response ? error.response.data : error.message);
+//     }
+// }
+
+
+
+// app.post("/jira-webhook", async (req, res) => {
+//     try {
+//         console.log("Received Webhook Data:", JSON.stringify(req.body, null, 2));
+
+//         const action = req.body.action;
+//         if (action === "update_issue") {
+//             const issueKey = req.body.issueKey;
+
+//             // Request user input for new description
+//             const updateCard = {
+//                 type: "message",
+//                 attachments: [
+//                     {
+//                         contentType: "application/vnd.microsoft.card.adaptive",
+//                         content: {
+//                             $schema: "http://adaptivecards.io/schemas/adaptive-card.json",
+//                             type: "AdaptiveCard",
+//                             version: "1.4",
+//                             body: [
+//                                 {
+//                                     type: "TextBlock",
+//                                     text: "✏️ **Update JIRA Issue**",
+//                                     weight: "bolder",
+//                                     size: "medium"
+//                                 },
+//                                 {
+//                                     type: "Input.Text",
+//                                     id: "newDescription",
+//                                     placeholder: "Enter new issue description"
+//                                 }
+//                             ],
+//                             actions: [
+//                                 {
+//                                     type: "Action.Submit",
+//                                     title: "✅ Save Update",
+//                                     data: {
+//                                         action: "save_update",
+//                                         issueKey: issueKey
+//                                     }
+//                                 }
+//                             ]
+//                         }
+//                     }
+//                 ]
+//             };
+
+//             // Send this update request card back to Teams
+//             await axios.post(MS_TEAMS_WEBHOOK_URL, updateCard);
+//             return res.status(200).json({ message: "Update prompt sent to Teams" });
+//         }
+
+//         if (action === "save_update") {
+//             const issueKey = req.body.issueKey;
+//             const newDescription = req.body.newDescription;
+
+//             if (!issueKey || !newDescription) {
+//                 return res.status(400).json({ message: "Missing issueKey or newDescription" });
+//             }
+
+//             // Call the Jira API to update the issue
+//             await updateJiraIssue(issueKey, newDescription);
+
+//             // Notify Teams about the successful update
+//             await axios.post(MS_TEAMS_WEBHOOK_URL, {
+//                 text: `✅ **JIRA Issue Updated** \n *Issue:* [${issueKey}](https://ujjwal27022004.atlassian.net/browse/${issueKey}) \n *New Description:* ${newDescription}`
+//             });
+
+//             return res.status(200).json({ message: "JIRA issue updated successfully" });
+//         }
+
+//         res.status(400).json({ message: "Unknown action" });
+//     } catch (error) {
+//         console.error("Error processing webhook:", error.message);
+//         res.status(500).json({ error: "Failed to process webhook" });
+//     }
+// });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //---------------------------------WEB HOOK-----------------------------------------------------------------------------------------
 
 const MS_TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL; 
@@ -600,7 +789,7 @@ const sendAdaptiveCardToTeams = async (issueData,statusMessage="") => {
                 contentType: "application/vnd.microsoft.card.adaptive",
                 content: {
                     type: "AdaptiveCard",
-                    version: "1.4",
+                    version: "1.3",
                     body: [
                         {
                             type: "TextBlock",
@@ -648,7 +837,7 @@ const sendAdaptiveCardToTeams = async (issueData,statusMessage="") => {
                                             { title: "Story", value: "Story" },
                                             { title: "Task", value: "Task" }
                                         ],
-                                        value: issueData.issueType // Default to current issue type
+                                        value: issueData.issueType || "Bug"  // Default to current issue type
                                     },
                                     {
                                         type: "Input.Text",
@@ -656,18 +845,28 @@ const sendAdaptiveCardToTeams = async (issueData,statusMessage="") => {
                                         label: "Update Description",
                                         isMultiline: true,
                                         placeholder: "Enter new issue description...",
-                                        value: issueData.description // Default to current description
+                                        value: issueData.description || "updated issue" // Default to current description
                                     }
                                 ],
                                 actions: [
                                     {
-                                        type: "Action.Submit",
-                                        title: "Submit",
-                                        data: {
-                                            action:"updateIssue",
-                                            issueKey:issueData.id
+                                        "type": "Action.Execute",
+                                        "title": "Submit",
+                                        "verb": "updateIssue",
+                                        "data": {
+                                          "issueKey": `${issueData.id}`,
+                                          "updatedIssueType": "Bug",
+                                          "updatedDescription": "Enter updated description..."
+                                        },
+                                        "fallback": {
+                                          "type": "Action.OpenUrl",
+                                          "url": "https://0788-2401-4900-1c45-ccf4-44fd-338a-acaa-6373.ngrok-free.app/updateIssue"
                                         }
-                                    }
+                                      }
+                                      
+                                      
+                                      
+                                      
                                 ]
                             }
                         },
@@ -688,7 +887,6 @@ const sendAdaptiveCardToTeams = async (issueData,statusMessage="") => {
         console.log("try blok executing")
       const response = await axios.post(TEAMS_WEBHOOK_URL, adaptiveCard, {
         headers: { 
-            Authorization : `Bearer ${globaltoken}`,
             "Content-Type": "application/json"
          },
       });
@@ -718,63 +916,51 @@ const sendAdaptiveCardToTeams = async (issueData,statusMessage="") => {
     res.status(201).json({ message: "Issue created and Teams notification sent!", issue: newIssue });
   });
 
-// const updateIssue=async(updateIssueObject)=>{
-//     console.log("update issue function has been called");
-//     try {
-//         console.log("tyry block of update issue function has been called");
-//         const response = await axios.put(
-//             `https://ujjwal27022004.atlassian.net/rest/api/2/issue/${updateIssueObject.issueKey}`,
-//             {
-//                 fields: {
-//                     description: updateIssueObject.description, // directly updating description
-//                     issueType:updateIssueObject.issueType
-//                 }
-//             },
-//             {
-//                 headers: {
-//                     'Authorization': `Basic ${Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64')}`, // Basic Auth with encoded email and API token
-//                     'Content-Type': 'application/json',
-//                 }
-//             }
-//         );
+  app.post("/updateIssue", async (req, res) => {
+    try {
+        console.log("Received Update Request from Teams:", req.body);
 
-//         res.status(200).json({ message: "JIRA issue description updated successfully", issue: response.data });
-//     } catch (error) {
-//         console.error('Error updating Jira issue:', error.response ? error.response.data : error.message);
-//         res.status(500).json({ message: "Error updating Jira issue", error: error.response?.data });
-//     }
-       
-    
-//         res.status(400).json({ error: "Invalid action" });
-    
-// }
+        const { verb, data } = req.body;
 
-app.post("/updateIssue", async (req, res) => {
-    const { action, issueKey, updatedIssueType, updatedDescription } = req.body;
+        if (verb !== "updateIssue") {
+            return res.status(400).json({ error: "Invalid action verb" });
+        }
 
-    if (action === "updateIssue") {
-        console.log(`Updating issue ${issueKey}`);
+        const { issueKey, updatedIssueType, updatedDescription } = data;
+
+        console.log(`Updating Jira issue: ${issueKey}`);
         console.log(`New Type: ${updatedIssueType}`);
         console.log(`New Description: ${updatedDescription}`);
 
-        // Simulate database update
-        const updatedIssue = {
-            key: issueKey,
-            issueType: updatedIssueType || "Bug",
-            description: updatedDescription || "No description provided."
-        };
+        // Update the issue in Jira
+        const jiraResponse = await axios.put(
+            `https://ujjwal27022004.atlassian.net/rest/api/2/issue/${issueKey}`,
+            {
+                fields: {
+                    description: updatedDescription || "No description provided.",
+                    issuetype: { name: updatedIssueType || "Bug" }
+                }
+            },
+            {
+                headers: {
+                    'Authorization': `Basic ${Buffer.from(`${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`).toString('base64')}`,
+                    'Content-Type': 'application/json',
+                }
+            }
+        );
 
-        // Status message to confirm the update
-        const statusMessage = `✅ Issue updated successfully! New Type: ${updatedIssue.issueType}`;
+        console.log("JIRA issue updated successfully:", jiraResponse.data);
 
-        // Send an updated Adaptive Card with new details
-        await sendAdaptiveCardToTeams(updatedIssue, statusMessage);
+        // Send confirmation message back to Teams
+        return res.status(200).json({ message: "JIRA issue updated successfully", issue: jiraResponse.data });
 
-        return res.json({ message: `Issue ${issueKey} updated successfully.` });
+    } catch (error) {
+        console.error("Error updating Jira issue:", error.response?.data || error.message);
+        return res.status(500).json({ message: "Error updating Jira issue", error: error.response?.data });
     }
-
-    res.status(400).json({ error: "Invalid action type" });
 });
+
+
   
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
