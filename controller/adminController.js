@@ -3,8 +3,8 @@ const adminService = require('../services/adminService');
 // Save Notification Schema
 exports.saveNotificationSchema = async (req, res) => {
     try {
-        const { adminId, fields, templateName } = req.body;
-        await adminService.saveNotificationSchema(adminId, fields, templateName);
+        const { adminId, fields, templateName, summary, status, priority, description, issueUrl } = req.body;
+        await adminService.saveNotificationSchema(adminId, fields, templateName, summary, status, priority, description, issueUrl);
         res.status(201).json({ message: "Notification schema saved successfully" });
     } catch (error) {
         console.error("Error saving notification schema:", error);
@@ -15,8 +15,10 @@ exports.saveNotificationSchema = async (req, res) => {
 // Update Notification Schema
 exports.updateNotificationSchema = async (req, res) => {
     try {
-        const { schemaId, fields, templateName } = req.body;
-        await adminService.updateNotificationSchema(schemaId, fields, templateName);
+        console.log("Request Body:", req.body);
+        const { schemaId, fields, templateName, summary, status, priority, description, issueUrl } = req.body;
+
+        await adminService.updateNotificationSchema(schemaId, fields, templateName, summary, status, priority, description, issueUrl);
         res.status(200).json({ message: "Notification schema updated successfully" });
     } catch (error) {
         console.error("Error updating notification schema:", error);
@@ -46,7 +48,7 @@ exports.getLatestNotificationSchema = async (req, res) => {
     }
 };
 
-// Assign Channel Creation Permission
+// Assign Channel Creation Permission (No Changes Needed)
 exports.assignChannelPermission = async (req, res) => {
     try {
         const { userId, canCreateChannel, adminId } = req.body;
@@ -58,7 +60,7 @@ exports.assignChannelPermission = async (req, res) => {
     }
 };
 
-// Get User Permissions
+// Get User Permissions (No Changes Needed)
 exports.getUserPermissions = async (req, res) => {
     try {
         const { userId } = req.params;

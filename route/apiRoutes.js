@@ -16,7 +16,7 @@ router.post('/create-jira-issue', createJiraIssue);
 router.get('/get-jira-issues', getJiraIssues);
 router.put('/update-jira-description',updateJiraIssue)
 
-router.post('/jira/webhook', handleJiraWebhook);
+// router.post('/jira/webhook', handleJiraWebhook);
 
 
 router.post("/issues", issue);

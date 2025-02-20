@@ -179,50 +179,51 @@ async function updateJiraIssue(req, res) {
 
 const MS_TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL; 
 
-
-async function handleJiraWebhook(req, res) {
+const adminConfig = {
+    issueKey: true,
+    summary: false,
+    status: true,
+    priority: true,
+    description: false
+};
+async function handleJiraWebhook(req, res) { 
     try {
-        console.log("Received Jira Webhook:", JSON. stringify(req.body, null, 2));
+        console.log("Received Jira Webhook:", JSON.stringify(req.body, null, 2));
 
         // Extract relevant data from Jira Webhook payload
-        const issueKey = req.body.issue?.key || "Unknown Issue";
-        const summary = req.body.issue?.fields?.summary || "No Summary";
-        const status = req.body.issue?.fields?.status?.name || "No Status";
+        const issueKey = req.body.issue?.key || "No issueKey";
+        const summary = req.body.issue?.fields?.summary || "No summary";
+        const status = req.body.issue?.fields?.status?.name || "No status";
         const priority = req.body.issue?.fields?.priority?.name || "No Priority";
         const description = req.body.issue?.fields?.description || "No Description";
         const issueUrl = `${process.env.JIRA_BASE_URL}/browse/${issueKey}`;
 
-        // Prepare the payload for MS Teams Webhook (Adaptive Card Format)
+        console.log(description)
+
+        // **Dynamically build the message based on adminConfig**
+        let messageBody = `**Jira Issue Updated: [${issueKey}](${issueUrl})** 🚀\n`;
+        if (adminConfig.issueKey && issueKey) messageBody += `🔹 **Issue Key:** ${issueKey} \n`;
+        if (adminConfig.summary && summary) messageBody += `📌 **Summary:** ${summary} \n`;
+        if (adminConfig.status && status) messageBody += `📊 **Status:** ${status} \n`;
+        if (adminConfig.priority && priority) messageBody += `⚡ **Priority:** ${priority} \n`;
+        if (adminConfig.description && description) messageBody += `📝 **Description:** ${description} \n`;
+
+        // **DEBUG: Log Message Body**
+        console.log("Final Message Body:", messageBody);
+
+        // If no valid fields, return early to prevent empty webhook
+        if (!messageBody.trim()) {
+            console.warn("No selected fields contain valid data. Webhook not sent.");
+            return res.status(400).json({ message: "No valid fields selected for notification." });
+        }
+
+        // Prepare the payload for MS Teams Webhook
         const teamsMessage = {
-            "text": `**Jira Issue Updated: [${issueKey}](${issueUrl})** 🚀 \n Summary : ${summary} \n Description : ${description} \n IssueKey : ${issueKey}`,
-            "attachments": [
-                {
-                    "contentType": "application/vnd.microsoft.card.adaptive",
-                    "content": {
-                        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
-                        "type": "AdaptiveCard",
-                        "version": "1.4",
-                        "body": [
-                            {
-                                "type": "TextBlock",
-                                "text": "**Jira Issue Update**",
-                                "weight": "bolder",
-                                "size": "medium"
-                            },
-                            {
-                                "type": "FactSet",
-                                "facts": [
-                                    { "title": "Issue Key:", "value": issueKey },
-                                    { "title": "Summary:", "value": summary },
-                                    { "title": "Status:", "value": status },
-                                    { "title": "Priority:", "value": priority }
-                                ]
-                            }
-                        ]
-                    }
-                }
-            ]
+            "text": messageBody
         };
+
+        // **DEBUG: Log Final Message**
+        console.log("Final Teams Message:", JSON.stringify(teamsMessage, null, 2));
 
         // Send formatted message to Microsoft Teams
         const response = await axios.post(MS_TEAMS_WEBHOOK_URL, teamsMessage);
@@ -233,6 +234,7 @@ async function handleJiraWebhook(req, res) {
         console.error("Error processing webhook:", error.message);
         res.status(500).json({ error: "Failed to process webhook" });
     }
+    
 }
 
 

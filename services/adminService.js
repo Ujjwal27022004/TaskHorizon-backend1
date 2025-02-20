@@ -1,11 +1,11 @@
 const adminModel = require('../model/adminModel');
 
-exports.saveNotificationSchema = async (adminId, fields, templateName) => {
-    return adminModel.saveNotificationSchema(adminId, fields, templateName);
+exports.saveNotificationSchema = async (adminId, fields, templateName, summary, status, priority, description, issueUrl) => {
+    return adminModel.saveNotificationSchema(adminId, fields, templateName, summary, status, priority, description, issueUrl);
 };
 
-exports.updateNotificationSchema = async (schemaId, fields, templateName) => {
-    return adminModel.updateNotificationSchema(schemaId, fields, templateName);
+exports.updateNotificationSchema = async (schemaId, fields, templateName, summary, status, priority, description, issueUrl) => {
+    return adminModel.updateNotificationSchema(schemaId, fields, templateName, summary, status, priority, description, issueUrl);
 };
 
 exports.getNotificationSchemas = async () => {
