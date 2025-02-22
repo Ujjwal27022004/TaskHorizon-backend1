@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require("mongoose");
 const cors = require('cors');
 const bodyParser = require('body-parser');
 require('./config/dotenv');
@@ -9,11 +10,27 @@ const adminRoutes = require('./route/adminRoutes');
 const axios = require('axios');
 const adminModel = require('./model/adminModel');
 
+const schemaRoutes = require("./route/schemaRoutes");
+const webhookRoutes = require("./route/webhookRoutes");   
+
+
+mongoose.connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+}).then(() => console.log("MongoDB Connected"))
+    .catch(err => console.log(err));
+
+
+
 
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 app.use('/api/admin', adminRoutes);// admin routes for notification and channel control
+
+app.use("/api", schemaRoutes);
+app.use("/api", webhookRoutes);
+
 
 //Health check
 app.get('/', (req, res) => {
@@ -38,13 +55,6 @@ app.use('/api/todos', todoRoutes);
 const MS_TEAMS_WEBHOOK_URL = process.env.TEAMS_WEBHOOK_URL; 
 
 
-const adminConfig = {
-    issueKey: true,
-    summary: false,
-    status: true,
-    priority: true,
-    description: false
-};
 
 app.post("/jira-webhook", async (req, res) => {
     try {
