@@ -9,9 +9,14 @@ const todoRoutes = require('./route/todoRoutes');
 const adminRoutes = require('./route/adminRoutes');
 const axios = require('axios');
 const adminModel = require('./model/adminModel');
-
 const schemaRoutes = require("./route/schemaRoutes");
-const webhookRoutes = require("./route/webhookRoutes");   
+const webhookRoutes = require("./route/webhookRoutes"); 
+const jiraWebhook = require("./route/jiraWebhook");
+const { createTeamsChannel, addUsersToChannel } = require("./services/teamsService"); 
+
+const teamConfigRoutes = require("./route/teamConfig");
+
+
 
 
 mongoose.connect(process.env.MONGO_URI, {
@@ -30,6 +35,8 @@ app.use('/api/admin', adminRoutes);// admin routes for notification and channel 
 
 app.use("/api", schemaRoutes);
 app.use("/api", webhookRoutes);
+app.use("/api", jiraWebhook); //new jira webhook for channel config
+app.use("/api", teamConfigRoutes);
 
 
 //Health check
