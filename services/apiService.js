@@ -38,6 +38,8 @@ async function fetchChannels(teamId, accessToken) {
         const response = await axios.get(`${teams.graphApiUrl}/teams/${teamId}/channels`, {
             headers: { 'Authorization': `Bearer ${accessToken}` }
         });
+        console.log(response.data.value)
+        
         return response.data.value;
     } catch (error) {
         console.error('Error fetching channels:', error.response ? error.response.data : error.message);
