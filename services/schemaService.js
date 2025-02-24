@@ -12,7 +12,7 @@ async function processWebhookData(webhookPayload) {
             }
         }
 
-        console.log("Schema updated with missing fields.");
+        console.log("Schema updated with missing fields Saransh.");
     } catch (error) {
         console.error("Error processing webhook data:", error);
     }
